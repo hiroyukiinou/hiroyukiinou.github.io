@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>二重振り子 — Pendulum Lab</title>
+<meta name="description" content="平面と球面を切り替えられる4次RATTLEによる二重振り子。RK4と比較し、エネルギー・角運動量・拘束誤差を観察できます。">
+<style>
+:root{color-scheme:dark;--bg:#101418;--panel:#191e23;--line:#30373e;--muted:#a6b2bb;--mint:#b5f4d1;--orange:#ffb77d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e8eded;font:14px system-ui,-apple-system,sans-serif}button,input,select{font:inherit}button,select{color:inherit;background:#242c32;border:1px solid #3a444d;border-radius:8px;cursor:pointer}button{padding:10px 15px}button:hover{background:#354039}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--mint);outline-offset:3px}header{height:90px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid var(--line)}.brand{font-size:11px;letter-spacing:3px;color:var(--mint);margin-bottom:7px}h1{font-size:23px;font-weight:500;letter-spacing:.05em;margin:0}.header-right{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:10px}.dot{width:6px;height:6px;border-radius:50%;background:var(--mint)}main{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start}.viewport{position:sticky;top:0;height:calc(100dvh - 90px);min-height:540px;overflow:hidden;background:radial-gradient(ellipse at 45% 42%,#202b2e 0,#11181d 55%,#101418 85%)}canvas{width:100%;height:100%;display:block;position:absolute;inset:0;touch-action:none;cursor:grab}.scene-top{position:absolute;top:26px;left:28px;pointer-events:none}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--muted)}.scene-title{margin-top:8px;font-size:15px}.legend{display:flex;gap:18px;font-size:11px;color:var(--muted);margin-top:12px}.legend i{display:inline-block;width:6px;height:6px;margin-right:7px;border-radius:50%;background:var(--mint)}.legend .second{background:var(--orange)}.badge{display:inline-block;font-size:10px;color:var(--mint);border:1px solid #b5f4d140;border-radius:4px;padding:5px 8px;margin-top:15px;background:#101a16b3}.view-buttons{position:absolute;right:24px;top:25px;display:flex;gap:5px}.view-buttons button{font-size:11px;padding:7px 10px;background:#162026b3}.bottom{position:absolute;bottom:25px;left:28px;right:28px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.metrics{display:flex;gap:26px;flex-wrap:wrap}.value{font-size:21px;font-variant-numeric:tabular-nums;font-weight:300;margin-top:7px}.unit{font-size:11px;color:var(--muted);margin-left:4px}.hint{color:var(--muted);font-size:11px;line-height:1.9;text-align:right}.sidebar{background:var(--panel);border-left:1px solid var(--line);padding:26px 23px;min-height:calc(100dvh - 90px)}.section-label{font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:15px}.playrow{display:flex;gap:8px;margin-bottom:20px}.playrow button:first-child{flex:1;background:var(--mint);color:#15271c;border-color:var(--mint);font-weight:600}.field{margin:17px 0}.field label{display:flex;justify-content:space-between;align-items:center;font-size:12px}.field output{color:var(--mint);font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--mint);height:4px;margin:16px 0 3px;cursor:pointer}select{width:100%;padding:10px;margin-top:6px;font-size:12px}.divider{height:1px;background:var(--line);margin:23px 0}.check{display:flex;align-items:center;gap:9px;color:#c5d0d6;font-size:12px;margin:15px 0}.check input{accent-color:var(--mint)}.note{font-size:11px;color:var(--muted);line-height:1.9;margin:12px 0 0}.apply{width:100%;margin-top:9px;font-size:12px}.status{font-size:11px;color:var(--mint);margin-top:12px;min-height:16px;line-height:1.7}.status[data-error="true"]{color:#ffb4a5}.details{font-size:11px;color:var(--muted);line-height:1.9}.details summary{cursor:pointer;color:#cbd5da}.details p{margin-bottom:0}.diagnostics{display:grid;grid-template-columns:1fr auto;font-size:11px;gap:11px 10px;margin:0}.diagnostics dt{color:var(--muted)}.diagnostics dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.fatal{position:absolute;left:24px;right:24px;bottom:130px;padding:14px 18px;background:#3c2227ed;border:1px solid #be776f;border-radius:8px;font-size:12px;line-height:1.8}.fatal[hidden]{display:none}a{color:var(--mint)}
+@media(min-width:1400px){.sidebar{padding:32px}main{grid-template-columns:1fr 370px}}
+@media(max-width:1050px){.hint{display:none}.view-buttons{top:146px}.metrics{gap:18px}.value{font-size:18px}.eyebrow{letter-spacing:1px}}
+@media(max-width:760px){header{height:78px;padding:0 19px}h1{font-size:19px}.header-right{display:none}main{display:block}.viewport{position:relative;height:65dvh;min-height:460px}.sidebar{border-left:0;border-top:1px solid var(--line);padding:24px}.scene-top{left:18px;top:21px}.scene-title{font-size:13px}.view-buttons{top:21px;right:14px}.view-buttons button{padding:6px}.bottom{left:18px;right:18px;bottom:18px}.metrics{gap:20px}.value{font-size:18px}.sidebar-inner{max-width:520px;margin:auto}}
+@media(max-width:430px){.view-buttons{top:135px}.value{font-size:16px}.metrics{gap:14px}.scene-top .eyebrow{font-size:9px}.fatal{left:14px;right:14px;bottom:110px}}
+[hidden]{display:none!important}
+.mode-switch{display:flex;gap:6px}.mode-switch button{flex:1;font-size:12px;padding:10px 6px}.mode-switch button[aria-pressed="true"]{background:var(--mint);border-color:var(--mint);color:#15271c;font-weight:600}
+body[data-mode="planar"] canvas{cursor:default;touch-action:pan-y}
+.details>summary{padding:3px 0}.details .field label{color:#e8eded}
+#ensembleControls .diagnostics{margin-top:18px}#ensembleBadge{display:table;margin-top:10px}#methodBadge{margin-top:8px}
+.symbol-panel{margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}.symbol-heading{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:10px}.symbol-latest{font:600 18px ui-monospace,monospace;color:var(--muted)}.symbol-latest[data-letter="R"]{color:var(--orange)}.symbol-latest[data-letter="L"]{color:var(--mint)}.symbol-sequence{font:15px/1.9 ui-monospace,monospace;letter-spacing:.12em;background:#11181d;border:1px solid var(--line);padding:10px 12px;border-radius:8px;overflow-wrap:anywhere;max-height:130px;overflow-y:auto;min-height:54px;user-select:text}.symbol-sequence[data-empty="true"]{font:11px/1.9 system-ui;letter-spacing:0;color:var(--muted)}.symbol-counts{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);margin-top:9px;font-variant-numeric:tabular-nums}.symbol-counts b{font-weight:500;color:#e8eded}.small-button{font-size:11px;padding:7px 10px;margin:12px 0}#nearbySymbols{margin-top:6px}.symbol-rows{max-height:240px;overflow:auto;margin-top:10px}.symbol-row{display:grid;grid-template-columns:45px 1fr;gap:8px;margin:7px 0;font:11px/1.8 ui-monospace,monospace}.symbol-row code{overflow-wrap:anywhere;font:inherit;color:#dbe5e6}.symbol-row small{font-size:9px;color:var(--muted)}
+#angleNote{margin-bottom:18px}
+</style>
+</head>
+<body data-mode="planar">
+<header><div><div class="brand">PENDULUM LAB / 03</div><h1 id="pageTitle">二重振り子</h1></div><div class="header-right"><span class="dot"></span>GEOMETRIC DYNAMICS EXPLORER</div></header>
+<main>
+<section id="viewport" class="viewport" aria-label="平面二重振り子の2D表示">
+<canvas id="scene" aria-label="平面二重振り子。ホイールで拡大縮小"></canvas>
+<div class="scene-top"><div id="sceneEyebrow" class="eyebrow">PLANAR DOUBLE PENDULUM</div><div id="sceneTitle" class="scene-title">平面に描く、ふたつの振り子。</div><div class="legend"><span><i></i>質点 1</span><span><i class="second"></i>質点 2・軌跡</span></div><div id="ensembleBadge" class="badge" hidden></div><div class="badge" id="methodBadge">4次 RATTLE · Δt = 1/480 s</div></div>
+<div id="viewControls" class="view-buttons" hidden><button data-view="perspective">斜め</button><button data-view="front">正面</button><button data-view="top">上面</button></div>
+<div id="fatal" class="fatal" role="alert" hidden></div>
+<div class="bottom"><div class="metrics"><div><div class="eyebrow">TIME</div><div class="value"><span id="time">0.00</span><span class="unit">s</span></div></div><div><div class="eyebrow">MAX |ΔE| / E*</div><div class="value"><span id="error">0.00e+0</span></div></div><div id="momentumMetric" hidden><div class="eyebrow">MAX |ΔLᵧ|</div><div class="value"><span id="momentumError">0.00e+0</span><span class="unit">kg m²/s</span></div></div></div><div id="viewHint" class="hint">スクロールで拡大・縮小</div></div>
+</section>
+<aside class="sidebar"><div class="sidebar-inner">
+<div class="section-label">MODE</div>
+<div class="mode-switch" role="group" aria-label="振り子の種類"><button id="modePlanar" aria-pressed="true">平面二重振り子</button><button id="modeSpherical" aria-pressed="false">球面二重振り子</button></div>
+<p class="note" id="modeNote">鉛直な平面内を動く、通常の二重振り子です。</p>
+<div class="divider"></div><div class="section-label">SIMULATION</div>
+<div class="playrow"><button id="play">Ⅱ 一時停止</button><button id="reset" title="最後に適用した設定の初期状態に戻す">↺ リセット</button></div>
+<label for="preset" style="font-size:12px">初期状態のプリセット</label>
+<select id="preset"><option value="spatial">立体運動 — ねじれた軌道</option><option value="planar">平面運動 — 同じ平面から解放</option><option value="gentle">小振幅 — 穏やかな揺れ</option><option value="wild">大振幅 — 複雑な運動</option><option value="spinning">回転付き — 非零角運動量</option></select><p id="presetNote" class="note" hidden></p>
+<div class="field"><label for="speed">再生速度 <output id="speedOut">1.0×</output></label><input id="speed" type="range" min="0.1" max="2" step="0.1" value="1"></div>
+<section id="symbolPanel" class="symbol-panel" aria-label="真上通過の記号列">
+<div class="section-label">真上通過の記号列</div>
+<div class="symbol-heading"><span>基準の振り子</span><span id="symbolLatest" class="symbol-latest">—</span></div>
+<div id="symbolSequence" class="symbol-sequence" tabindex="0" aria-label="基準の振り子のRとLの記号列">通過すると R / L を追加します</div>
+<div class="symbol-counts"><span>計 <b id="symbolTotal">0</b></span><span>R <b id="symbolRight">0</b></span><span>L <b id="symbolLeft">0</b></span><span id="symbolLastTime">—</span></div>
+<p class="note">2本目の棒が、1本目の先端に対して鉛直上向きを通過すると記録。画面から見て <b>R = 時計回り</b>、<b>L = 反時計回り</b>。初期時刻の真上や、真上で折り返すだけの場合は数えません。</p>
+<button id="clearSymbols" class="small-button">記号列を消去</button>
+<details id="nearbySymbols" class="details" hidden><summary>各振り子の記号列を比較</summary><p class="note">各行は最新128文字、左から時間順。#1 が基準。行の色は近傍の振り子に対応します。</p><div id="symbolRows" class="symbol-rows"></div></details>
+<p id="symbolLimitNote" class="note" hidden>記号列は最新4096文字を保存。通過回数は全て集計しています。</p>
+</section>
+<div class="divider"></div><div class="section-label">初期値鋭敏性</div>
+<label class="check"><input type="checkbox" id="ensembleEnabled">近い初期状態を重ねて比較</label>
+<div id="ensembleControls" hidden>
+<div class="field"><label for="ensembleCount">振り子の個数（基準を含む）</label><select id="ensembleCount"><option value="2">2 個</option><option value="8">8 個</option><option value="16">16 個</option><option value="32" selected>32 個</option><option value="64">64 個</option><option value="128">128 個</option><option value="256">256 個</option></select></div>
+<div class="field"><label for="epsilon">初期角度のずれ幅 ε（最大）</label><select id="epsilon"><option value="0.000001">±0.000001°</option><option value="0.00001">±0.00001°</option><option value="0.0001">±0.0001°</option><option value="0.001" selected>±0.001°</option><option value="0.01">±0.01°</option><option value="0.1">±0.1°</option><option value="1">±1°</option></select></div>
+<div class="field"><label for="perturbDirection">ずらす角度</label><select id="perturbDirection"><option value="theta1">θ₁ のみ</option><option value="theta2">θ₂ のみ</option><option value="both">θ₁・θ₂（同じずれ）</option></select></div>
+<label class="check"><input type="checkbox" id="nearbyTrails" checked>近傍の軌跡も表示</label>
+<dl class="diagnostics"><dt>初期の先端最大距離</dt><dd id="initialSeparation">—</dd><dt>現在の先端最大距離</dt><dd id="separationMax">—</dd><dt>先端距離の RMS</dt><dd id="separationRms">—</dd></dl>
+<p class="note">基準の角度の周りに最大 ±ε の範囲で初期状態を並べます。長さ・質量・初期角速度は共通で、互いに力を及ぼしません。個数・ずれの変更で全て同時に再スタートします。</p>
+<p class="note">通常のミント／オレンジが基準。青〜紫〜桃色が近傍です。多数表示では軌跡を短くし、負荷が高い場合は同じ計算刻みのままゆっくり進みます。</p>
+</div>
+<div class="divider"></div><details id="integratorDetails" class="details"><summary>積分法・時間刻み</summary>
+<div class="field"><label for="method">積分法</label><select id="method"><option value="rattle4">4次 RATTLE（標準）</option><option value="rattle2">2次 RATTLE</option><option value="rk4">RK4 ＋拘束補正（比較用）</option></select></div>
+<div class="field"><label for="stepSize">固定時間刻み Δt</label><select id="stepSize"><option value="auto" selected>自動（開始時に選択・以後固定）</option><option value="120">1/120 秒</option><option value="240">1/240 秒</option><option value="480">1/480 秒</option><option value="960">1/960 秒</option><option value="1920">1/1920 秒</option><option value="3840">1/3840 秒</option></select></div>
+<p class="note">積分法・刻み・初期条件の変更は、下の「適用」で反映します。再生速度は積分刻みを変えません。自動設定は質量・長さ・初速度から開始時に選びます。</p>
+</details><div class="divider"></div><div class="section-label">INITIAL CONDITIONS</div><p id="angleNote" class="note">角度は鉛直下向きが 0°、右向きが正です。静止状態から解放します。</p><div id="fields"></div>
+<button class="apply" id="apply">設定を適用して再スタート ↗</button><div id="status" class="status" role="status">初速度 0 で静かに解放</div>
+<div class="divider"></div><details id="diagnosticsDetails" class="details"><summary>数値計算の詳細</summary>
+<dl class="diagnostics"><dt>エネルギー E</dt><dd id="energyValue">—</dd><dt id="momentumLabel" hidden>鉛直角運動量 Lᵧ</dt><dd id="momentumValue" hidden>—</dd><dt>現在の |ΔE| / E*</dt><dd id="currentEnergyError">—</dd><dt>最大位置拘束誤差</dt><dd id="positionError">—</dd><dt>最大速度拘束誤差</dt><dd id="velocityError">—</dd><dt>Newton反復数の最大</dt><dd id="newtonIterations">—</dd></dl>
+<p class="note">数値誤差は基準の振り子について表示。最大値は適用・リセットからの全ステップで集計。E* = max(重力エネルギー尺度, |初期E|)。角運動量の単位は kg m²/s、エネルギーは J。</p>
+</details><div class="divider"></div><div class="section-label">DISPLAY</div>
+<label class="check"><input type="checkbox" id="trail" checked>質点 2 の軌跡を表示</label><label id="shellControl" class="check" hidden><input type="checkbox" id="shell">可動範囲の球面を表示</label><button id="clear" style="font-size:11px;padding:7px 10px">軌跡を消去</button>
+<div class="divider"></div>
+<details class="details"><summary>モデルと計算について</summary>
+<p>長さ一定・質量ゼロの2本の棒と2個の質点。平面モードでは鉛直な同一平面内、球面モードでは3次元で自由に回転します。重力加速度は 9.81 m/s²。摩擦・空気抵抗はありません。</p>
+<p>平面モードでは符号付きの角度 θ₁, θ₂ だけを指定し、初速度は 0。計算は球面モードと共通のベクトル表現ですが、初期状態と更新が同一の鉛直平面を保ちます。表示には透視投影を使いません。</p>
+<p>球面モードの傾き θ は鉛直下向きからの角度、方位 φ は水平面内の角度。初期の鉛直軸まわりの角速度 Ω を2本に共通に与えられます。Ω = 0 なら静止状態から解放します。</p>
+<p>標準は固定刻みの4次RATTLE（2次RATTLEの対称3段合成）。連成した質量行列に基づき位置・速度の拘束を解きます。拘束の正規化による事後補正はしません。途中に負の刻みを含みますが、表示と軌跡は完了したステップだけを使います。</p>
+<p>位置拘束は (|nᵢ|² − 1)/2 の残差が浮動小数点精度程度になるまでNewton法で解き、速度拘束は2×2線形方程式で解きます。収束しなければ状態・時刻を進めず停止します。大きな質量比や粗い手動刻みで停止した場合は、刻みを細かくして再スタートしてください。</p>
+<p>位置誤差は maxᵢ ||nᵢ|² − 1|、速度誤差は maxᵢ |nᵢ · ṅᵢ|（s⁻¹）。角運動量は支点まわりの鉛直成分。RATTLEはエネルギーを厳密には保存しません。保存量の誤差が小さくても、カオス的な軌道の長時間精度を保証するものではありません。</p>
+<p>平面モードの記号列は、2本目の棒の鉛直上向き通過を R（時計回り）／L（反時計回り）で記録します。完了した前進ステップの両端の位置と速度を3次Hermite補間して通過を検出します。4次RATTLEの内部の負の刻みは記録しません。表示用の補間にも依存しません。時刻は補間による近似値です。</p>
+<p>近傍比較では全ての振り子を共通の固定刻みで独立に計算し、同じ時刻の状態を表示します。距離は質点2と基準の質点2のユークリッド距離です。各初期状態のエネルギーはわずかに異なります。距離の増大だけでカオスを証明するものではなく、極めて小さいずれや長時間の結果では積分誤差にも注意が必要です。</p>
+<p>描画と計算は分離。実行中は完了した2状態を表示用に補間し、描画値は計算に戻しません。軌跡はシミュレーション時間で最大20秒分。非表示タブでは停止し、負荷が高い場合は実時間より遅く進みます。</p>
+<p><a href="https://www.math.kyoto-u.ac.jp/~inou/preprint/doublependulum.pdf" target="_blank" rel="noopener">運動方程式の参考：H. Inou, Double pendulum</a></p>
+</details>
+</div></aside>
+</main>
+<script>
+/* Spherical double pendulum, with y vertical and gravity pointing down.
+ * State: [n1(3), n2(3), dn1(3), dn2(3)], |ni|=1, ni.dni=0.
+ * The RATTLE formulas use velocities; canonical momenta are p=M*dn.
+ * No independent normalization/projection is applied to RATTLE states.
+ */
+(function (root) {
+  'use strict';
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const POSITION_TOL = 4 * Number.EPSILON; // residual is (|n|^2-1)/2
+  const MAX_NEWTON = 12;
+  const COMPOSE_A = 1 / (2 - Math.cbrt(2));
+  const COMPOSE_B = 1 - 2 * COMPOSE_A;
+
+  class IntegrationError extends Error {
+    constructor(message) { super(message); this.name = 'IntegrationError'; }
+  }
+  function solve2(a, b, c, d, u, v) {
+    const det = a * d - b * c;
+    if (!Number.isFinite(det) || Math.abs(det) <= 64 * Number.EPSILON * (Math.abs(a * d) + Math.abs(b * c))) {
+      throw new IntegrationError('拘束方程式が特異に近づきました。刻みを細かくして再スタートしてください。');
+    }
+    return [(d * u - b * v) / det, (a * v - c * u) / det];
+  }
+  function createModel(parameters = {}) {
+    const { l1 = 1, l2 = 1, m1 = 1, m2 = 1, g = 9.81 } = parameters;
+    if (![l1, l2, m1, m2].every(x => Number.isFinite(x) && x > 0) || !Number.isFinite(g) || g < 0) {
+      throw new RangeError('長さ・質量は正の有限値、重力加速度は非負の有限値が必要です。');
+    }
+    const A = (m1 + m2) * l1 * l1, B = m2 * l2 * l2, C = m2 * l1 * l2;
+    // AB-C^2, evaluated without cancellation when m1 is small.
+    const D = m1 * m2 * l1 * l1 * l2 * l2;
+    const a = B / D, b = -C / D, c = A / D;
+    const F1 = -(m1 + m2) * g * l1, F2 = -m2 * g * l2;
+    return Object.freeze({ l1, l2, m1, m2, g, A, B, C, D, a, b, c, F1, F2,
+      acceleration: [a * F1 + b * F2, b * F1 + c * F2],
+      energyScale: (m1 + m2) * g * l1 + m2 * g * l2,
+      timeScale: g > 0 ? Math.sqrt(Math.min(l1, l2) / g) : 1 });
+  }
+  function recommendedHz(model, state) {
+    // Largest frequency of M^-1 K at the hanging equilibrium, K=diag(-F1,-F2).
+    // Also resolve the initially prescribed angular speed. Chosen ONCE at start;
+    // no state-dependent changes of h during the Hamiltonian integration.
+    const { A, B, D, F1, F2 } = model;
+    const trace = (-B * F1 - A * F2) / D, determinant = F1 * F2 / D;
+    const frequency = Math.sqrt(Math.max(0, (trace + Math.sqrt(Math.max(0, trace * trace - 4 * determinant))) / 2));
+    const speed = state ? Math.max(Math.hypot(...state.slice(6, 9)), Math.hypot(...state.slice(9, 12))) : 0;
+    const baseline = Math.sqrt((2 + Math.SQRT2) * 9.81);
+    return 120 * 2 ** Math.max(2, Math.ceil(Math.log2(Math.max(1, 4 * Math.max(frequency, 2 * speed) / baseline))));
+  }
+  function trig(x) {
+    const snap = y => Math.abs(y) < 1e-14 ? 0 : y;
+    return [snap(Math.sin(x)), snap(Math.cos(x))];
+  }
+  function initialState({ theta1 = Math.PI * 100 / 180, theta2 = Math.PI * 75 / 180,
+    phi1 = 0, phi2 = Math.PI * 85 / 180, omegaY = 0 } = {}) {
+    if (![theta1, theta2, phi1, phi2, omegaY].every(Number.isFinite)) throw new RangeError('初期条件が有限値ではありません。');
+    const direction = (theta, phi) => {
+      const [st, ct] = trig(theta), [sp, cp] = trig(phi);
+      return [st * cp, -ct, st * sp];
+    };
+    const n1 = direction(theta1, phi1), n2 = direction(theta2, phi2);
+    // Common initial angular velocity about the upward y axis: omegaY * ey x ni.
+    return [...n1, ...n2, omegaY * n1[2], 0, -omegaY * n1[0], omegaY * n2[2], 0, -omegaY * n2[0]];
+  }
+  function validateState(state) {
+    if (state.length !== 12 || !Array.from(state).every(Number.isFinite)) throw new IntegrationError('状態に非有限値があります。');
+    for (let i = 0; i < 2; i++) {
+      const n = state.slice(3 * i, 3 * i + 3), v = state.slice(6 + 3 * i, 9 + 3 * i);
+      if (Math.abs(dot(n, n) - 1) > 1e-10 || Math.abs(dot(n, v)) > 1e-10 * (1 + Math.hypot(...v))) {
+        throw new IntegrationError('位置または速度の初期拘束を満たしていません。');
+      }
+    }
+  }
+  function rattle2(s, model, h, stats) {
+    const { a, b, c, acceleration } = model;
+    const q = [s.slice(0, 3), s.slice(3, 6)], v = [s.slice(6, 9), s.slice(9, 12)];
+    const free = q.map((r, i) => r.map((x, j) => x + h * v[i][j] + (j === 1 ? h * h * acceleration[i] / 2 : 0)));
+    // eta=-h^2*lambda/2: position impulse along the OLD constraint gradients.
+    let eta1 = 0, eta2 = 0, next, converged = false, iterations = 0;
+    for (; iterations < MAX_NEWTON; iterations++) {
+      next = [free[0].map((x, j) => x + a * eta1 * q[0][j] + b * eta2 * q[1][j]),
+        free[1].map((x, j) => x + b * eta1 * q[0][j] + c * eta2 * q[1][j])];
+      const f1 = (dot(next[0], next[0]) - 1) / 2, f2 = (dot(next[1], next[1]) - 1) / 2;
+      if (Math.max(Math.abs(f1), Math.abs(f2)) <= POSITION_TOL) { converged = true; break; }
+      const [d1, d2] = solve2(a * dot(next[0], q[0]), b * dot(next[0], q[1]),
+        b * dot(next[1], q[0]), c * dot(next[1], q[1]), f1, f2);
+      eta1 -= d1; eta2 -= d2;
+    }
+    if (!converged || dot(next[0], q[0]) <= 0 || dot(next[1], q[1]) <= 0) {
+      throw new IntegrationError('位置の拘束計算が収束しませんでした。刻みを細かくして再スタートしてください。');
+    }
+    if (stats) stats.maxNewton = Math.max(stats.maxNewton || 0, iterations);
+    // v_half from its impulse formula, avoiding (q_new-q_old)/h cancellation.
+    const candidate = [v[0].map((x, j) => x + (j === 1 ? h * acceleration[0] : 0) + (a * eta1 * q[0][j] + b * eta2 * q[1][j]) / h),
+      v[1].map((x, j) => x + (j === 1 ? h * acceleration[1] : 0) + (b * eta1 * q[0][j] + c * eta2 * q[1][j]) / h)];
+    // Velocity impulse uses NEW gradients and the full (coupled) mass metric.
+    const off = b * dot(next[0], next[1]);
+    const [u, w] = solve2(a * dot(next[0], next[0]), off, off, c * dot(next[1], next[1]),
+      -dot(next[0], candidate[0]), -dot(next[1], candidate[1]));
+    const velocity = [candidate[0].map((x, j) => x + a * u * next[0][j] + b * w * next[1][j]),
+      candidate[1].map((x, j) => x + b * u * next[0][j] + c * w * next[1][j])];
+    const result = [...next[0], ...next[1], ...velocity[0], ...velocity[1]];
+    if (!result.every(Number.isFinite)) throw new IntegrationError('計算が非有限値になりました。刻みを細かくしてください。');
+    return result;
+  }
+  function rattle4(s, model, h, stats) {
+    // Palindromic fourth-order composition. Middle substep is negative.
+    return rattle2(rattle2(rattle2(s, model, COMPOSE_A * h, stats), model, COMPOSE_B * h, stats), model, COMPOSE_A * h, stats);
+  }
+  function derivative(s, model) {
+    const { A, B, C, D, F1, F2 } = model;
+    const q = s.slice(0, 3), r = s.slice(3, 6), v = s.slice(6, 9), w = s.slice(9, 12);
+    const f = B * F1 - C * F2, k = -C * F1 + A * F2;
+    const off = -C * dot(q, r);
+    const [lambda, mu] = solve2(B, off, off, A,
+      -D * dot(v, v) - q[1] * f, -D * dot(w, w) - r[1] * k);
+    return [...v, ...w,
+      ...q.map((x, i) => (B * lambda * x - C * mu * r[i] + (i === 1 ? f : 0)) / D),
+      ...r.map((x, i) => (-C * lambda * q[i] + A * mu * x + (i === 1 ? k : 0)) / D)];
+  }
+  function rk4(s, model, h) {
+    const k1 = derivative(s, model), k2 = derivative(s.map((x, i) => x + h * k1[i] / 2), model),
+      k3 = derivative(s.map((x, i) => x + h * k2[i] / 2), model), k4 = derivative(s.map((x, i) => x + h * k3[i]), model);
+    const result = s.map((x, i) => x + h * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6);
+    // Deliberately retained legacy method, for comparison only.
+    for (let k = 0; k <= 3; k += 3) {
+      const length = Math.hypot(...result.slice(k, k + 3));
+      for (let i = 0; i < 3; i++) result[k + i] /= length;
+      const normal = dot(result.slice(k, k + 3), result.slice(k + 6, k + 9));
+      for (let i = 0; i < 3; i++) result[k + 6 + i] -= normal * result[k + i];
+    }
+    if (!result.every(Number.isFinite)) throw new IntegrationError('RK4の計算が発散しました。刻みを細かくしてください。');
+    return result;
+  }
+  function energy(s, model) {
+    const { A, B, C, F1, F2 } = model, v = s.slice(6, 9), w = s.slice(9, 12);
+    return A * dot(v, v) / 2 + B * dot(w, w) / 2 + C * dot(v, w) - F1 * s[1] - F2 * s[4];
+  }
+  function angularMomentum(s, model) {
+    const { A, B, C } = model;
+    // y component of n1 x p1 + n2 x p2, with p1=A*v1+C*v2.
+    return s[2] * (A * s[6] + C * s[9]) - s[0] * (A * s[8] + C * s[11])
+      + s[5] * (C * s[6] + B * s[9]) - s[3] * (C * s[8] + B * s[11]);
+  }
+  function constraints(s) {
+    let position = 0, velocity = 0;
+    for (let k = 0; k <= 3; k += 3) {
+      const n = s.slice(k, k + 3), v = s.slice(k + 6, k + 9);
+      position = Math.max(position, Math.abs(dot(n, n) - 1));
+      velocity = Math.max(velocity, Math.abs(dot(n, v)));
+    }
+    return { position, velocity };
+  }
+  const methods = Object.freeze({ rattle4, rattle2, rk4 });
+  function step(s, model, h, method = 'rattle4', stats) {
+    if (!Number.isFinite(h) || h === 0) throw new RangeError('刻みは0でない有限値が必要です。');
+    if (!Object.hasOwn(methods, method)) throw new RangeError('不明な積分法です。');
+    return methods[method](s, model, h, stats);
+  }
+  root.Physics = Object.freeze({ createModel, recommendedHz, initialState, validateState, step, energy,
+    angularMomentum, constraints, derivative, methods, IntegrationError });
+})(globalThis);
+
+</script><script>
+/* Upper crossings of the SECOND ROD relative to its moving joint, in the xy
+ * plane. x right/y up: at the top, dx/dt>0 is clockwise (R), dx/dt<0 is L.
+ * Inspect only completed forward steps, never the negative internal stages of
+ * a fourth-order RATTLE composition. Event times use cubic Hermite interpolation.
+ */
+(function (root) {
+  'use strict';
+  const EPS = Number.EPSILON;
+  const polynomial = (p0, p1, v0, v1, h) => [2 * p0 - 2 * p1 + h * (v0 + v1),
+    -3 * p0 + 3 * p1 - h * (2 * v0 + v1), h * v0, p0];
+  const value = (p, u) => ((p[0] * u + p[1]) * u + p[2]) * u + p[3];
+  function upperCrossings(previous, next, time, h) {
+    if (!(h > 0)) return [];
+    const x0 = previous[3], x1 = next[3], vx0 = previous[9], vx1 = next[9];
+    // Bezier control-point bounds cheaply reject most steps without root finding.
+    const minX = Math.min(x0, x0 + h * vx0 / 3, x1 - h * vx1 / 3, x1);
+    const maxX = Math.max(x0, x0 + h * vx0 / 3, x1 - h * vx1 / 3, x1);
+    if (minX > 0 || maxX < 0 || (minX === 0 && maxX === 0)) return [];
+    const y0 = previous[4], y1 = next[4], vy0 = previous[10], vy1 = next[10];
+    if (Math.max(y0, y0 + h * vy0 / 3, y1 - h * vy1 / 3, y1) <= 0) return [];
+    const x = polynomial(x0, x1, vx0, vx1, h), y = polynomial(y0, y1, vy0, vy1, h);
+    const scale = Math.abs(x[0]) + Math.abs(x[1]) + Math.abs(x[2]) + Math.abs(x[3]);
+    const tol = 64 * EPS * scale;
+    if (!Number.isFinite(scale) || scale === 0) return [];
+    const cuts = [0, 1], A = 3 * x[0], B = 2 * x[1], C = x[2];
+    if (Math.abs(A) <= tol) {
+      if (Math.abs(B) > tol) { const u = -C / B; if (u > 0 && u < 1) cuts.push(u); }
+    } else {
+      const disc = B * B - 4 * A * C, discTol = 64 * EPS * (B * B + Math.abs(4 * A * C));
+      if (disc >= -discTol) {
+        const d = Math.sqrt(Math.max(0, disc));
+        const q = -.5 * (B + (B >= 0 ? d : -d));
+        const critical = q === 0 ? [-B / (2 * A)] : [q / A, C / q];
+        for (const u of critical) if (u > 0 && u < 1) cuts.push(u);
+      }
+    }
+    cuts.sort((a, b) => a - b);
+    const roots = [], evaluate = u => {
+      const f = u === 0 ? x0 : u === 1 ? x1 : value(x, u);
+      return Math.abs(f) <= tol ? 0 : f;
+    };
+    for (let i = 1; i < cuts.length; i++) {
+      let a = cuts[i - 1], b = cuts[i], fa = evaluate(a), fb = evaluate(b);
+      if (fa === 0) roots.push(a);
+      if (fb === 0) roots.push(b);
+      if ((fa < 0 && fb > 0) || (fa > 0 && fb < 0)) {
+        for (let j = 0; j < 48; j++) {
+          const middle = (a + b) / 2, f = value(x, middle);
+          if (f === 0) { a = b = middle; break; }
+          if ((f < 0) === (fa < 0)) { a = middle; fa = f; } else b = middle;
+        }
+        roots.push((a + b) / 2);
+      }
+    }
+    roots.sort((a, b) => a - b);
+    const events = []; let last = -1;
+    for (const u of roots) {
+      // Half-open interval (old time, new time]: a shared endpoint counts once.
+      if (u <= 1e-12 || Math.abs(u - last) < 1e-10) continue;
+      last = u;
+      if (value(y, u) <= 0) continue; // lower vertical crossing is not a symbol
+      const first = (3 * x[0] * u + 2 * x[1]) * u + x[2];
+      let direction;
+      if (Math.abs(first) > 8 * tol) direction = Math.sign(first);
+      else {
+        const second = 6 * x[0] * u + 2 * x[1];
+        if (Math.abs(second) > 8 * tol || Math.abs(x[0]) <= tol) continue; // touch, no passage
+        direction = Math.sign(x[0]); // odd (triple) root: passage at zero instantaneous speed
+      }
+      events.push({ symbol: direction > 0 ? 'R' : 'L', time: time + h * u });
+    }
+    return events;
+  }
+  class PlanarSymbolRecorder {
+    constructor(limit = 4096) {
+      this.limit = limit; this.revision = 0; this.lastRecordedTime = -Infinity; this.clear();
+    }
+    clear() {
+      this.sequence = ''; this.total = 0; this.right = 0; this.left = 0; this.lastEvent = null; this.revision++;
+    }
+    advance(previous, next, time, h) {
+      const events = upperCrossings(previous, next, time, h);
+      for (const event of events) {
+        if (event.time <= this.lastRecordedTime) continue;
+        this.lastRecordedTime = event.time; this.lastEvent = event;
+        this.sequence = (this.sequence + event.symbol).slice(-this.limit);
+        this.total++; if (event.symbol === 'R') this.right++; else this.left++;
+        this.revision++;
+      }
+      return events;
+    }
+  }
+  root.PlanarSymbols = Object.freeze({ upperCrossings, PlanarSymbolRecorder });
+})(globalThis);
+
+</script><script>
+/* Browser-independent simulation clock. All reported diagnostics use committed,
+ * non-interpolated states. A failed composed step never changes state/time.
+ */
+(function (root) {
+  'use strict';
+  class PendulumSimulation {
+    constructor({ model, state, method = 'rattle4', h = null, recordSymbols = false }) {
+      h = h === null ? 1 / Physics.recommendedHz(model, state) : h;
+      if (!Number.isFinite(h) || h <= 0 || !Object.hasOwn(Physics.methods, method)) throw new RangeError('積分設定が不正です。');
+      Physics.validateState(state);
+      this.model = model; this.state = state.slice(); this.previous = state.slice();
+      this.method = method; this.h = h; this.steps = 0;
+      this.symbols = recordSymbols ? new PlanarSymbols.PlanarSymbolRecorder() : null;
+      this.initialEnergy = Physics.energy(state, model);
+      this.initialMomentum = Physics.angularMomentum(state, model);
+      this.energyScale = Math.max(model.energyScale, Math.abs(this.initialEnergy), 1e-12);
+      this.maxima = { energy: 0, momentum: 0, position: 0, velocity: 0, maxNewton: 0 };
+      this.diagnostics = this.measure();
+    }
+    get time() { return this.steps * this.h; }
+    measure() {
+      const energy = Physics.energy(this.state, this.model), momentum = Physics.angularMomentum(this.state, this.model);
+      const c = Physics.constraints(this.state);
+      const error = { energy: Math.abs(energy - this.initialEnergy) / this.energyScale,
+        momentum: Math.abs(momentum - this.initialMomentum), position: c.position, velocity: c.velocity };
+      for (const key of Object.keys(error)) this.maxima[key] = Math.max(this.maxima[key], error[key]);
+      return { energy, momentum, error };
+    }
+    prepareStep() {
+      const stats = { maxNewton: 0 };
+      const state = Physics.step(this.state, this.model, this.h, this.method, stats);
+      return { state, maxNewton: stats.maxNewton };
+    }
+    commitStep(candidate) {
+      const previousTime = this.time;
+      this.previous = this.state; this.state = candidate.state; this.steps++;
+      this.maxima.maxNewton = Math.max(this.maxima.maxNewton, candidate.maxNewton);
+      this.diagnostics = this.measure();
+      if (this.symbols) this.symbols.advance(this.previous, this.state, previousTime, this.h);
+      return this.state;
+    }
+    step() { return this.commitStep(this.prepareStep()); }
+    // Unit vectors are normalized for display ONLY, never fed to the integrator.
+    renderDirections(alpha = 1) {
+      const result = new Array(6), t = Math.min(1, Math.max(0, alpha));
+      for (let k = 0; k <= 3; k += 3) {
+        let v = [0, 1, 2].map(i => (1 - t) * this.previous[k + i] + t * this.state[k + i]);
+        const norm = Math.hypot(...v);
+        if (norm < 1e-12) v = this.state.slice(k, k + 3);
+        else v = v.map(x => x / norm);
+        for (let i = 0; i < 3; i++) result[k + i] = v[i];
+      }
+      return result;
+    }
+  }
+  root.PendulumSimulation = PendulumSimulation;
+})(globalThis);
+
+</script><script>
+/* Deterministic nearby initial states, synchronized at the SAME fixed time step.
+ * Each member is an independent pendulum; there are no interactions between them.
+ */
+(function (root) {
+  'use strict';
+  const DIRECTIONS = new Set(['theta1', 'theta2', 'both']);
+  class PendulumEnsemble {
+    constructor({ model, initial = {}, method = 'rattle4', h = null, count = 1, epsilon = 0, direction = 'theta1', recordSymbols = false }) {
+      if (!Number.isInteger(count) || count < 1 || count > 256) throw new RangeError('個数は1〜256で指定してください。');
+      if (!Number.isFinite(epsilon) || epsilon < 0 || !DIRECTIONS.has(direction)) throw new RangeError('初期状態のずれの設定が不正です。');
+      const seed = { theta1: 100 * Math.PI / 180, theta2: 75 * Math.PI / 180,
+        phi1: 0, phi2: 85 * Math.PI / 180, omegaY: 0, ...initial };
+      this.offsets = [0]; this.epsilon = epsilon; this.direction = direction;
+      const pairs = Math.ceil((count - 1) / 2);
+      // Alternating +/-, uniformly spaced away from the reference. No duplicate
+      // zero sample. Epsilon is the maximum offset, not the adjacent spacing.
+      for (let i = 0; i < count - 1; i++) this.offsets.push((i % 2 ? -1 : 1) * epsilon * (Math.floor(i / 2) + 1) / pairs);
+      const states = this.offsets.map(delta => {
+        const options = { ...seed };
+        if (direction !== 'theta2') options.theta1 += delta;
+        if (direction !== 'theta1') options.theta2 += delta;
+        return Physics.initialState(options);
+      });
+      const fixedH = h === null ? 1 / Math.max(...states.map(state => Physics.recommendedHz(model, state))) : h;
+      this.members = states.map(state => new PendulumSimulation({ model, state, method, h: fixedH, recordSymbols }));
+      this.reference = this.members[0];
+      this.initialSeparation = this.separation();
+    }
+    get count() { return this.members.length; }
+    get time() { return this.reference.time; }
+    step() {
+      // Prepare EVERY candidate before committing ANY state, so a failed member
+      // leaves the entire group at the previous common physical time.
+      const candidates = this.members.map((member, index) => {
+        try { return member.prepareStep(); }
+        catch (error) {
+          if (this.count === 1) throw error;
+          throw new Physics.IntegrationError(`振り子 ${index + 1}/${this.count}: ${error.message}`);
+        }
+      });
+      for (let i = 0; i < this.count; i++) this.members[i].commitStep(candidates[i]);
+    }
+    separation() {
+      const base = this.reference.state, { l1, l2 } = this.reference.model;
+      let maxSquared = 0, sumSquared = 0;
+      for (let i = 1; i < this.members.length; i++) {
+        const s = this.members[i].state;
+        let squared = 0;
+        for (let j = 0; j < 3; j++) {
+          const dx = l1 * (s[j] - base[j]) + l2 * (s[j + 3] - base[j + 3]);
+          squared += dx * dx;
+        }
+        maxSquared = Math.max(maxSquared, squared); sumSquared += squared;
+      }
+      return { max: Math.sqrt(maxSquared), rms: Math.sqrt(sumSquared / Math.max(1, this.count - 1)) };
+    }
+    color(index) {
+      const t = this.epsilon > 0 ? (this.offsets[index] / this.epsilon + 1) / 2 : index / Math.max(1, this.count - 1);
+      return `hsl(${195 + 130 * t}, 85%, 70%)`;
+    }
+  }
+  root.PendulumEnsemble = PendulumEnsemble;
+})(globalThis);
+
+</script><script>
+'use strict';
+const $ = id => document.getElementById(id), canvas = $('scene'), ctx = canvas.getContext('2d');
+const METHOD_NAMES = { rattle4: '4次 RATTLE', rattle2: '2次 RATTLE', rk4: 'RK4 ＋拘束補正' };
+const definitions = [
+  ['t1', '棒 1 の傾き θ₁', 0, 180, .01, 100, '°'],
+  ['t2', '棒 2 の傾き θ₂', 0, 180, .01, 75, '°'],
+  ['phi', '方位差 φ₂ − φ₁', -180, 180, 1, 85, '°'],
+  ['omega', '初期角速度 Ω（鉛直軸）', -2, 2, .1, 0, ' rad/s'],
+  ['l1', '棒 1 の長さ', .5, 1.5, .05, 1, ' m'],
+  ['l2', '棒 2 の長さ', .5, 1.5, .05, 1, ' m'],
+  ['m1', '質点 1 の質量', .25, 4, .25, 1, ' kg'],
+  ['m2', '質点 2 の質量', .25, 4, .25, 1, ' kg']
+];
+let currentMode = 'planar';
+let ensemble, sim, activeSettings, paused = false, failure = false, trail = [], accum = 0, last = null;
+let nearbyHistory = [], nextNearbyTime = 1 / 30;
+let symbolKey = null, symbolRowsKey = null, symbolRowsTime = -Infinity;
+const frameClock = globalThis.performance && typeof globalThis.performance.now === 'function' ? () => globalThis.performance.now() : null;
+let nextTrailTime = 1 / 60, az = .65, el = .28, zoom = 1, width = 1, height = 1;
+const add = (a, b) => a.map((x, i) => x + b[i]), mul = (a, k) => a.map(x => x * k), rad = x => x * Math.PI / 180;
+const scientific = value => value.toExponential(2);
+function setStatus(message, error = false) { $('status').textContent = message; $('status').dataset.error = String(error); }
+function pending() { $('presetNote').hidden = true; setStatus('設定を変更中 — 「適用」で再スタート'); }
+for (const [id, label, min, max, step, value] of definitions) {
+  const field = document.createElement('div'); field.className = 'field'; field.id = id + 'Field';
+  field.innerHTML = `<label for="${id}"><span id="${id}Label">${label}</span><output id="${id}Out"></output></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${value}">`;
+  $('fields').append(field);
+  $(id).oninput = () => { updateLabels(); pending(); };
+}
+function updateLabels() {
+  for (const [id, , , , , , unit] of definitions) {
+    const value = Number($(id).value);
+    $(id + 'Out').textContent = (id.startsWith('l') || id.startsWith('m') || id === 't1' || id === 't2' ? value.toFixed(2) : id === 'omega' ? value.toFixed(1) : value.toFixed(0)) + unit;
+  }
+}
+function readSettings() {
+  return { ...Object.fromEntries(definitions.map(([id]) => [id, Number($(id).value)])), ensembleEnabled: $('ensembleEnabled').checked, ensembleCount: Number($('ensembleCount').value), epsilon: Number($('epsilon').value), perturbDirection: $('perturbDirection').value, mode: currentMode, preset: $('preset').value, method: $('method').value, hz: $('stepSize').value === 'auto' ? 'auto' : Number($('stepSize').value) };
+}
+function applySettings(settings) {
+  try {
+    const model = Physics.createModel({ l1: settings.l1, l2: settings.l2, m1: settings.m1, m2: settings.m2 });
+    const initial = { theta1: rad(settings.t1), theta2: rad(settings.t2), phi2: settings.mode === 'planar' ? 0 : rad(settings.phi), omegaY: settings.mode === 'planar' ? 0 : settings.omega };
+    const candidate = new PendulumEnsemble({ model, initial, method: settings.method,
+      h: settings.hz === 'auto' ? null : 1 / settings.hz,
+      count: settings.ensembleEnabled ? settings.ensembleCount : 1,
+      epsilon: rad(settings.epsilon || .001), direction: settings.perturbDirection || 'theta1', recordSymbols: settings.mode === 'planar' });
+    ensemble = candidate; sim = ensemble.reference;
+    const hz = 1 / sim.h;
+    activeSettings = { ...settings }; accum = 0; last = null;
+    nearbyHistory = ensemble.members.map(() => []); nextNearbyTime = 1 / 30;
+    symbolKey = symbolRowsKey = null; symbolRowsTime = -Infinity;
+    restoreEnsembleControls(settings);
+    nextTrailTime = 1 / 60; trail = []; paused = false; failure = false;
+    $('play').textContent = 'Ⅱ 一時停止'; $('fatal').hidden = true;
+    $('methodBadge').textContent = `${METHOD_NAMES[sim.method]} · Δt = 1/${hz} s${settings.hz === 'auto' ? '（自動）' : ''}`;
+    setStatus(settings.mode === 'planar' || settings.omega === 0 ? '初速度 0 で静かに解放' : `初期角速度 Ω = ${settings.omega.toFixed(1)} rad/s`);
+    updatePresetNote(settings);
+    draw(1);
+  } catch (error) { stopWithError(error); }
+}
+function stopWithError(error) {
+  failure = true; paused = true; accum = 0;
+  const message = error instanceof Error ? error.message : String(error);
+  setStatus(message, true); $('fatal').textContent = message; $('fatal').hidden = false;
+  $('play').textContent = '停止中';
+}
+function restoreEnsembleControls(settings) {
+  $('ensembleEnabled').checked = Boolean(settings.ensembleEnabled);
+  $('ensembleCount').value = settings.ensembleCount || 32;
+  $('epsilon').value = settings.epsilon || .001;
+  $('perturbDirection').value = settings.perturbDirection || 'theta1';
+  $('ensembleControls').hidden = !settings.ensembleEnabled;
+  $('ensembleBadge').hidden = !settings.ensembleEnabled;
+  $('ensembleBadge').textContent = settings.ensembleEnabled ? `${ensemble.count} 個を比較 · 最大 ±${settings.epsilon}°` : '';
+  $('initialSeparation').textContent = scientific(ensemble.initialSeparation.max) + ' m';
+}
+$('ensembleEnabled').onchange = $('ensembleCount').onchange = $('epsilon').onchange = $('perturbDirection').onchange = () => applySettings(readSettings());
+$('nearbyTrails').onchange = () => { nearbyHistory = ensemble.members.map(() => []); nextNearbyTime = sim.time + 1 / 30; };
+$('clearSymbols').onclick = () => {
+  for (const member of ensemble.members) if (member.symbols) member.symbols.clear();
+  renderSymbols(true);
+};
+$('nearbySymbols').ontoggle = () => { if ($('nearbySymbols').open) renderSymbols(true); };
+$('apply').onclick = () => applySettings(readSettings());
+$('reset').onclick = () => {
+  for (const [id] of definitions) $(id).value = activeSettings[id];
+  $('preset').value = activeSettings.preset;
+  $('method').value = activeSettings.method; $('stepSize').value = activeSettings.hz;
+  updateLabels(); applySettings(activeSettings);
+};
+$('play').onclick = () => {
+  if (failure) return;
+  paused = !paused; last = null;
+  $('play').textContent = paused ? '▶ 再生' : 'Ⅱ 一時停止';
+};
+$('method').onchange = $('stepSize').onchange = pending;
+$('speed').oninput = () => { $('speedOut').textContent = Number($('speed').value).toFixed(1) + '×'; };
+$('clear').onclick = $('trail').onchange = () => { trail = []; nextTrailTime = sim.time + 1 / 60; nearbyHistory = ensemble.members.map(() => []); nextNearbyTime = sim.time + 1 / 30; };
+const SPHERICAL_PRESETS = { spatial: ['立体運動 — ねじれた軌道', 100, 75, 85, 0], planar: ['平面運動 — 同じ平面から解放', 110, 40, 180, 0], gentle: ['小振幅 — 穏やかな揺れ', 20, 30, 75, 0], wild: ['大振幅 — 複雑な運動', 155, 125, 120, 0], spinning: ['回転付き — 非零角運動量', 100, 75, 85, .7] };
+const PLANAR_PRESETS = { standard: ['標準 — 大きな揺れ', 110, -40, 0, 0], gentle: ['小振幅 — 穏やかな揺れ', 20, 30, 0, 0], antiphase: ['小振幅 — 逆相の揺れ', 0, 0, 0, 0], wild: ['大振幅 — 複雑な運動', 155, -125, 0, 0] };
+function antiPhaseAngles(settings) {
+  // Linearized planar equation: M * theta'' + K * theta = 0,
+  // M=[[A,C],[C,B]], K=diag(-F1,-F2). Select the higher frequency.
+  const { A, B, C, D, F1, F2 } = Physics.createModel(settings);
+  const trace = (-B * F1 - A * F2) / D;
+  const lambda = (trace + Math.sqrt(Math.max(0, trace * trace - 4 * F1 * F2 / D))) / 2;
+  const ratio = (-F1 / lambda - A) / C; // theta2/theta1 < 0
+  const amplitude = 12 / Math.max(1, Math.abs(ratio)); // neither angle exceeds 12 degrees
+  return [Number(amplitude.toFixed(2)), Number((amplitude * ratio).toFixed(2))];
+}
+function updatePresetNote(settings) {
+  let show = settings.mode === 'planar' && settings.preset === 'antiphase';
+  if (show) {
+    const [t1, t2] = antiPhaseAngles(settings);
+    show = Math.abs(t1 - settings.t1) < .011 && Math.abs(t2 - settings.t2) < .011;
+  }
+  $('presetNote').hidden = !show;
+  $('presetNote').textContent = show ? '高周波側の逆相モードに近い小振幅運動。選択時の長さ・質量から角度比を計算します。厳密な周期軌道を指定するものではありません。' : '';
+}
+const defaults = Object.fromEntries(definitions.map(([id, , , , , value]) => [id, value]));
+const modeSettings = {
+  planar: { ...defaults, mode: 'planar', t1: 110, t2: -40, phi: 0, omega: 0, method: 'rattle4', hz: 'auto', preset: 'standard', ensembleEnabled: false, ensembleCount: 32, epsilon: .001, perturbDirection: 'theta1' },
+  spherical: { ...defaults, mode: 'spherical', method: 'rattle4', hz: 'auto', preset: 'spatial', ensembleEnabled: false, ensembleCount: 32, epsilon: .001, perturbDirection: 'theta1' }
+};
+function switchMode(mode) {
+  if (sim && mode === currentMode) return;
+  if (sim) modeSettings[currentMode] = readSettings();
+  currentMode = mode;
+  const planar = mode === 'planar', settings = modeSettings[mode];
+  document.body.dataset.mode = mode;
+  $('modePlanar').setAttribute('aria-pressed', String(planar));
+  $('modeSpherical').setAttribute('aria-pressed', String(!planar));
+  $('pageTitle').textContent = planar ? '二重振り子' : '球面二重振り子';
+  document.title = (planar ? '二重振り子' : '球面二重振り子') + ' — Pendulum Lab';
+  $('sceneEyebrow').textContent = planar ? 'PLANAR DOUBLE PENDULUM' : 'SPHERICAL DOUBLE PENDULUM';
+  $('sceneTitle').textContent = planar ? '平面に描く、ふたつの振り子。' : '空間をめぐる、ふたつの振り子。';
+  $('modeNote').textContent = planar ? '鉛直な平面内を動く、通常の二重振り子です。' : '2本の棒が3次元で自由に動く二重振り子です。';
+  $('angleNote').textContent = planar ? '角度は鉛直下向きが 0°、右向きが正です。静止状態から解放します。' : '傾きは鉛直下向きからの角度。方位差と初期の回転も指定できます。';
+  $('viewHint').textContent = planar ? 'スクロールで拡大・縮小' : 'ドラッグで回転 · スクロールでズーム';
+  $('viewport').setAttribute('aria-label', planar ? '平面二重振り子の2D表示' : '球面二重振り子の3D表示');
+  canvas.setAttribute('aria-label', planar ? '平面二重振り子。ホイールで拡大縮小' : 'ドラッグで視点を回転、ホイールで拡大縮小');
+  for (const id of ['viewControls', 'shellControl', 'momentumMetric', 'momentumLabel', 'momentumValue', 'phiField', 'omegaField']) $(id).hidden = planar;
+  $('integratorDetails').open = $('diagnosticsDetails').open = !planar;
+  for (const id of ['t1', 't2']) {
+    $(id).min = planar ? '-180' : '0';
+    $(id + 'Label').textContent = (id === 't1' ? '棒 1' : '棒 2') + (planar ? ' の角度 θ' : ' の傾き θ') + (id === 't1' ? '₁' : '₂');
+  }
+  const presets = planar ? PLANAR_PRESETS : SPHERICAL_PRESETS;
+  $('preset').innerHTML = Object.entries(presets).map(([key, [label]]) => `<option value="${key}">${label}</option>`).join('');
+  for (const [id] of definitions) $(id).value = settings[id];
+  $('preset').value = settings.preset;
+  $('method').value = settings.method; $('stepSize').value = settings.hz;
+  pointer = null; canvas.style.cursor = planar ? 'default' : 'grab'; zoom = 1;
+  updateLabels(); applySettings(settings);
+}
+$('modePlanar').onclick = () => switchMode('planar');
+$('modeSpherical').onclick = () => switchMode('spherical');
+$('preset').onchange = () => {
+  const presets = currentMode === 'planar' ? PLANAR_PRESETS : SPHERICAL_PRESETS;
+  const [, ...values] = presets[$('preset').value];
+  ['t1', 't2', 'phi', 'omega'].forEach((id, i) => { $(id).value = values[i]; });
+  if (currentMode === 'planar' && $('preset').value === 'antiphase') {
+    const [t1, t2] = antiPhaseAngles(readSettings());
+    $('t1').value = t1; $('t2').value = t2;
+  }
+  updateLabels(); applySettings(readSettings());
+};
+for (const button of document.querySelectorAll('[data-view]')) button.onclick = () => {
+  if (currentMode === 'planar') return;
+  [az, el] = ({ perspective: [.65, .28], front: [0, 0], top: [0, Math.PI / 2 - .001] })[button.dataset.view];
+};
+let pointer = null;
+canvas.onpointerdown = e => { if (currentMode === 'planar') return; pointer = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; };
+canvas.onpointermove = e => {
+  if (!pointer) return;
+  az -= (e.clientX - pointer[0]) * .008; el = Math.max(-1.55, Math.min(1.55, el + (e.clientY - pointer[1]) * .008));
+  pointer = [e.clientX, e.clientY];
+};
+canvas.onpointerup = canvas.onpointercancel = () => { pointer = null; canvas.style.cursor = currentMode === 'planar' ? 'default' : 'grab'; };
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.5, Math.min(2, zoom * Math.exp(-e.deltaY * .001))); }, { passive: false });
+function resize() {
+  const r = canvas.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  width = r.width; height = r.height; canvas.width = width * d; canvas.height = height * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+new ResizeObserver(resize).observe(canvas);
+function project(v){
+if(currentMode==='planar'){
+  const reach=sim.model.l1+sim.model.l2;
+  const scale=Math.min((width-48)/(2*reach+.5),(height-210)/(2*reach+.5))*zoom;
+  return [width/2+v[0]*scale,(height+75)/2-v[1]*scale,0,scale];
+}
+const x=Math.cos(az)*v[0]-Math.sin(az)*v[2],z=Math.sin(az)*v[0]+Math.cos(az)*v[2],y=v[1]+.65,yy=Math.cos(el)*y-Math.sin(el)*z,zz=Math.sin(el)*y+Math.cos(el)*z;const k=7/(7-zz),s=Math.min(width*.22,height*.23)*zoom;return [width*.5+x*s*k,height*.49-yy*s*k,zz,k*s];}
+function line(points,color,w=1){if(points.length<2)return;ctx.beginPath();points.forEach((v,i)=>{const q=project(v);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});ctx.strokeStyle=color;ctx.lineWidth=w;ctx.stroke();}
+function sphere(center,r,color){for(let axis=0;axis<3;axis++){let a=[];for(let i=0;i<=96;i++){let t=i*Math.PI/48,v=[0,0,0];v[(axis+1)%3]=r*Math.cos(t);v[(axis+2)%3]=r*Math.sin(t);a.push(add(center,v));}line(a,color);}}
+function bob(v,r,color){const a=project(v),rr=r*a[3];
+if(currentMode==='planar'){ctx.beginPath();ctx.arc(a[0],a[1],Math.max(rr,r<.03?2.5:6),0,Math.PI*2);ctx.fillStyle=color;ctx.fill();return;}
+ctx.save();ctx.shadowBlur=22;ctx.shadowColor=color+'55';const g=ctx.createRadialGradient(a[0]-rr*.3,a[1]-rr*.4,0,a[0],a[1],rr);g.addColorStop(0,'#fff6e9');g.addColorStop(.3,color);g.addColorStop(1,color==='#b5f4d1'?'#477e65':'#a76438');ctx.fillStyle=g;ctx.beginPath();ctx.arc(a[0],a[1],rr,0,Math.PI*2);ctx.fill();ctx.restore();}
+function renderSymbols(force = false) {
+  const planar = currentMode === 'planar' && sim && sim.symbols;
+  $('symbolPanel').hidden = !planar;
+  $('nearbySymbols').hidden = !planar || ensemble.count < 2;
+  if (!planar) return;
+  const recorder = sim.symbols;
+  if (force || symbolKey !== recorder.revision) {
+    $('symbolSequence').textContent = recorder.sequence || '通過すると R / L を追加します';
+    $('symbolSequence').dataset.empty = String(!recorder.sequence);
+    $('symbolTotal').textContent = String(recorder.total);
+    $('symbolRight').textContent = String(recorder.right);
+    $('symbolLeft').textContent = String(recorder.left);
+    $('symbolLatest').textContent = recorder.lastEvent ? recorder.lastEvent.symbol : '—';
+    $('symbolLatest').dataset.letter = recorder.lastEvent ? recorder.lastEvent.symbol : '';
+    $('symbolLastTime').textContent = recorder.lastEvent ? recorder.lastEvent.time.toFixed(3) + ' s' : '—';
+    $('symbolLimitNote').hidden = recorder.total <= recorder.sequence.length;
+    symbolKey = recorder.revision;
+  }
+  if (ensemble.count > 1 && $('nearbySymbols').open) {
+    const key = ensemble.members.map(member => member.symbols.revision).join(',');
+    if (force || (key !== symbolRowsKey && sim.time - symbolRowsTime >= .1)) {
+      $('symbolRows').innerHTML = ensemble.members.map((member, i) => {
+        const record = member.symbols, color = i === 0 ? '#b5f4d1' : ensemble.color(i);
+        const sequence = (record.sequence.length > 128 ? '…' : '') + record.sequence.slice(-128);
+        return `<div class="symbol-row"><span style="color:${color}">#${i + 1}<br><small>${record.total} 回</small></span><code>${sequence || '—'}</code></div>`;
+      }).join('');
+      symbolRowsKey = key; symbolRowsTime = sim.time;
+    }
+  }
+}
+function drawNearby(alpha) {
+  if (!ensemble || ensemble.count < 2) return;
+  ctx.save();
+  for (let i = 1; i < ensemble.count; i++) {
+    const color = ensemble.color(i);
+    if ($('trail').checked && $('nearbyTrails').checked) {
+      ctx.globalAlpha = ensemble.count > 64 ? .16 : .3;
+      line(nearbyHistory[i], color, 1);
+    }
+    const n = ensemble.members[i].renderDirections(alpha), { l1, l2 } = sim.model;
+    const q = mul(n.slice(0, 3), l1), r = add(q, mul(n.slice(3, 6), l2));
+    ctx.globalAlpha = ensemble.count > 64 ? .35 : .6;
+    line([[0, 0, 0], q, r], color, 1.1);
+    ctx.fillStyle = color;
+    for (const [position, radius] of [[q, 2], [r, 3]]) {
+      const screen = project(position);
+      ctx.beginPath(); ctx.arc(screen[0], screen[1], radius, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+function draw(alpha=1){if(!sim)return;const state=sim.renderDirections(alpha),p=[sim.model.l1,sim.model.l2];ctx.clearRect(0,0,width,height);const L=p[0]+p[1],floor=-L-.17;
+if(currentMode==='planar'){
+  ctx.setLineDash([4,6]);line([[0,.28,0],[0,-L,0]],'#90b2b032');ctx.setLineDash([]);
+}else{for(let i=-4;i<=4;i++){line([[i*.5,floor,-2],[i*.5,floor,2]],'#90b2b015');line([[-2,floor,i*.5],[2,floor,i*.5]],'#90b2b015');}}
+
+const q=mul(state.slice(0,3),p[0]),r=add(q,mul(state.slice(3,6),p[1]));if(currentMode==='spherical' && $('shell').checked){sphere([0,0,0],p[0],'#b5f4d125');sphere(q,p[1],'#ffb77d20');}
+if($('trail').checked){const buckets=14;for(let j=0;j<buckets;j++){const start=Math.floor(trail.length*j/buckets),end=Math.min(trail.length,Math.ceil(trail.length*(j+1)/buckets)+1);line(trail.slice(start,end),`rgba(255,183,125,${.035+.62*(j+1)/buckets})`,1.35);}}
+drawNearby(alpha);
+line([[0,.32,0],[0,0,0]],'#798b90',2);line([[-.18,.32,0],[.18,.32,0]],'#798b90',2);let objects=[{depth:(project([0,0,0])[2]+project(q)[2])/2,paint:()=>{line([[0,0,0],q],'#b5f4d1',3);}}, {depth:(project(q)[2]+project(r)[2])/2,paint:()=>line([q,r],'#ffb77d',3)},{depth:project(q)[2],paint:()=>bob(q,.065,'#b5f4d1')},{depth:project(r)[2],paint:()=>bob(r,.077,'#ffb77d')}];objects.sort((a,b)=>a.depth-b.depth).forEach(o=>o.paint());bob([0,0,0],.024,'#b5f4d1');
+if(currentMode==='spherical'){ctx.font='10px system-ui';for(const[label,v,c]of [['X',[.5,floor+.01,0],'#e39b8f'],['Z',[0,floor+.01,.5],'#8fb4db']]){line([[0,floor+.01,0],v],c,1.5);const a=project(v);ctx.fillStyle=c;ctx.fillText(label,a[0]+5,a[1]);}}
+const separation = ensemble.separation();
+$('separationMax').textContent = scientific(separation.max) + ' m';
+$('separationRms').textContent = scientific(separation.rms) + ' m';
+$('time').textContent = sim.time.toFixed(2);
+$('error').textContent = scientific(sim.maxima.energy);
+$('momentumError').textContent = scientific(sim.maxima.momentum);
+$('energyValue').textContent = sim.diagnostics.energy.toFixed(6) + ' J';
+$('momentumValue').textContent = sim.diagnostics.momentum.toFixed(9);
+$('currentEnergyError').textContent = scientific(sim.diagnostics.error.energy);
+$('positionError').textContent = scientific(sim.maxima.position);
+$('velocityError').textContent = scientific(sim.maxima.velocity) + ' s⁻¹';
+$('newtonIterations').textContent = sim.method === 'rk4' ? '—' : String(sim.maxima.maxNewton);
+renderSymbols();
+}
+function animate(now) {
+  const elapsed = last === null ? 0 : Math.min((now - last) / 1000, .1); last = now;
+  if (!paused && !document.hidden) {
+    accum = Math.min(accum + elapsed * Number($('speed').value), .25 * Number($('speed').value));
+    const started = frameClock ? frameClock() : 0;
+    try {
+      while (accum >= sim.h) {
+        ensemble.step(); accum -= sim.h;
+        if (sim.time + 1e-12 >= nextNearbyTime) {
+          if ($('trail').checked && $('nearbyTrails').checked && ensemble.count > 1) {
+            const capacity = Math.max(16, Math.min(240, Math.floor(6000 / (ensemble.count - 1))));
+            for (let i = 1; i < ensemble.count; i++) {
+              const n = ensemble.members[i].state, { l1, l2 } = sim.model;
+              nearbyHistory[i].push(add(mul(n.slice(0, 3), l1), mul(n.slice(3, 6), l2)));
+              if (nearbyHistory[i].length > capacity) nearbyHistory[i].shift();
+            }
+          }
+          nextNearbyTime += 1 / 30;
+        }
+        if (sim.time + 1e-12 >= nextTrailTime) {
+          if ($('trail').checked) {
+            const n = sim.state, { l1, l2 } = sim.model;
+            trail.push(add(mul(n.slice(0, 3), l1), mul(n.slice(3, 6), l2)));
+            if (trail.length > 1200) trail.shift();
+          }
+          nextTrailTime += 1 / 60;
+        }
+        if (frameClock && frameClock() - started >= 10) break;
+      }
+    } catch (error) { stopWithError(error); }
+  }
+  draw(paused ? 1 : accum / sim.h);
+  requestAnimationFrame(animate);
+}
+document.addEventListener('visibilitychange', () => { last = null; });
+switchMode('planar'); requestAnimationFrame(animate);
+
+</script>
+</body>
+</html>
